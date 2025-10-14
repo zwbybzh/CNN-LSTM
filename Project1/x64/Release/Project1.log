@@ -3582,41 +3582,41 @@ D:\libtorch\libtorch-win-shared-with-deps-2.5.1+cu121\libtorch\include\torch\csr
 E:\code-learning\libtorch\Solution1\Project1\Net.hpp(124,24): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
   (编译源文件“Net.cpp”)
   
-E:\code-learning\libtorch\Solution1\Project1\Net.hpp(179,20): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+E:\code-learning\libtorch\Solution1\Project1\Net.hpp(181,20): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
   (编译源文件“Net.cpp”)
   
-E:\code-learning\libtorch\Solution1\Project1\Net.hpp(199,29): warning C4305: “初始化”: 从“double”到“float”截断
+E:\code-learning\libtorch\Solution1\Project1\Net.hpp(201,29): warning C4305: “初始化”: 从“double”到“float”截断
   (编译源文件“Net.cpp”)
   
-E:\code-learning\libtorch\Solution1\Project1\Net.hpp(200,28): warning C4305: “初始化”: 从“double”到“float”截断
+E:\code-learning\libtorch\Solution1\Project1\Net.hpp(202,28): warning C4305: “初始化”: 从“double”到“float”截断
   (编译源文件“Net.cpp”)
   
-E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(43,67): warning C4305: “参数”: 从“double”到“_Ty”截断
-E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(43,67): warning C4305:         with
-E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(43,67): warning C4305:         [
-E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(43,67): warning C4305:             _Ty=float
-E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(43,67): warning C4305:         ]
+E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(50,67): warning C4305: “参数”: 从“double”到“_Ty”截断
+E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(50,67): warning C4305:         with
+E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(50,67): warning C4305:         [
+E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(50,67): warning C4305:             _Ty=float
+E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(50,67): warning C4305:         ]
   (编译源文件“Net.cpp”)
   
-E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(56,33): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(71,33): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
   (编译源文件“Net.cpp”)
   
-E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(75,67): warning C4305: “参数”: 从“double”到“_Ty”截断
-E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(75,67): warning C4305:         with
-E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(75,67): warning C4305:         [
-E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(75,67): warning C4305:             _Ty=float
-E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(75,67): warning C4305:         ]
+E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(102,67): warning C4305: “参数”: 从“double”到“_Ty”截断
+E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(102,67): warning C4305:         with
+E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(102,67): warning C4305:         [
+E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(102,67): warning C4305:             _Ty=float
+E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(102,67): warning C4305:         ]
   (编译源文件“Net.cpp”)
   
-E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(77,29): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+E:\code-learning\libtorch\Solution1\Project1\FieldDataset.hpp(104,29): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
   (编译源文件“Net.cpp”)
   
 E:\code-learning\libtorch\Solution1\Project1\Net.cpp(16,71): warning C4244: “参数”: 从“int64_t”转换到“int”，可能丢失数据
 E:\code-learning\libtorch\Solution1\Project1\Net.cpp(16,53): warning C4244: “参数”: 从“int64_t”转换到“int”，可能丢失数据
-E:\code-learning\libtorch\Solution1\Project1\Net.cpp(362,33): warning C4244: “参数”: 从“int64_t”转换到“int”，可能丢失数据
-E:\code-learning\libtorch\Solution1\Project1\Net.cpp(745,20): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
-E:\code-learning\libtorch\Solution1\Project1\Net.cpp(964,11): warning C4244: “初始化”: 从“int64_t”转换到“int”，可能丢失数据
-E:\code-learning\libtorch\Solution1\Project1\Net.cpp(965,11): warning C4244: “初始化”: 从“int64_t”转换到“int”，可能丢失数据
+E:\code-learning\libtorch\Solution1\Project1\Net.cpp(398,33): warning C4244: “参数”: 从“int64_t”转换到“int”，可能丢失数据
+E:\code-learning\libtorch\Solution1\Project1\Net.cpp(731,20): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
+E:\code-learning\libtorch\Solution1\Project1\Net.cpp(966,11): warning C4244: “初始化”: 从“int64_t”转换到“int”，可能丢失数据
+E:\code-learning\libtorch\Solution1\Project1\Net.cpp(967,11): warning C4244: “初始化”: 从“int64_t”转换到“int”，可能丢失数据
 D:\libtorch\libtorch-win-shared-with-deps-2.5.1+cu121\libtorch\include\c10\util\SmallVector.h(99,12): warning C4267: “=”: 从“size_t”转换到“Size_T”，可能丢失数据
 D:\libtorch\libtorch-win-shared-with-deps-2.5.1+cu121\libtorch\include\c10\util\SmallVector.h(99,12): warning C4267:         with
 D:\libtorch\libtorch-win-shared-with-deps-2.5.1+cu121\libtorch\include\c10\util\SmallVector.h(99,12): warning C4267:         [
@@ -4127,7 +4127,7 @@ D:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.3480
           [
               _Ty=int32_t
           ]
-          E:\code-learning\libtorch\Solution1\Project1\Net.cpp(1103,1):
+          E:\code-learning\libtorch\Solution1\Project1\Net.cpp(1115,1):
           查看对正在编译的函数 模板 实例化“std::_Optional_destruct_base<_Ty,true>::_Optional_destruct_base<const unsigned __int64>(std::in_place_t,const unsigned __int64 &&) noexcept”的引用
           with
           [
@@ -4220,9 +4220,9 @@ D:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.3480
   
     正在创建库 E:\code-learning\libtorch\Solution1\x64\Release\Project1.lib 和对象 E:\code-learning\libtorch\Solution1\x64\Release\Project1.exp
   正在生成代码
-  11 of 2808 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
-    4 functions were new in current compilation
-    44 functions had inline decision re-evaluated but remain unchanged
+  2 of 2843 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    11 functions had inline decision re-evaluated but remain unchanged
   已完成代码的生成
   Project1.vcxproj -> E:\code-learning\libtorch\Solution1\x64\Release\Project1.exe
   'pwsh.exe' 不是内部或外部命令，也不是可运行的程序

@@ -129,6 +129,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DFS.hpp" />
     <ClCompile Include="FileName.cpp" />
     <ClCompile Include="Net.cpp" />
     <ClCompile Include="test.cpp" />

@@ -94,7 +94,7 @@ public:
 
     // 获取训练批次
     std::pair<std::vector<torch::Tensor>, std::vector<torch::Tensor>>
-        get_training_batch(int batch_size) {
+        get_training_batchs(int batch_size) {
         std::vector<torch::Tensor> region_masks;
         std::vector<torch::Tensor> vector_fields;
 
@@ -132,21 +132,35 @@ public:
 
         int total_batches = config.num_samples / config.batch_size;
         if (total_batches == 0) total_batches = 1;
+        auto scheduler = torch::optim::StepLR(*trainer.optimizer, /*step_size=*/2, /*gamma=*/0.8);
+        auto [region_masks, vector_fields] = get_training_batchs(config.num_samples);
+
 
         for (int epoch = 0; epoch < config.num_epochs; ++epoch) {
             auto epoch_start = std::chrono::high_resolution_clock::now();
             float epoch_loss = 0.0f;
             int batches_processed = 0;
-
+            int sample_num = 0;
             // 训练一个epoch
             for (int batch_idx = 0; batch_idx < total_batches; ++batch_idx) {
                 try {
-                    std::cout << "batch_idx:"<<(batch_idx + 1)* config.batch_size << std::endl;
+                    std::cout << "batch_idx:" << (batch_idx + 1) * config.batch_size << std::endl;
                     // 获取训练批次输入参数
-                    auto [region_masks, vector_fields] = get_training_batch(config.batch_size);
+                    std::vector <torch::Tensor> region_masks_epoch;
+                    std::vector <torch::Tensor> vector_fields_epoch;
+
+                    int top = sample_num;
+
+                    for (sample_num; sample_num < std::min((top + config.batch_size), config.num_samples); sample_num++) {
+                        region_masks_epoch.push_back(region_masks[sample_num]);
+                        vector_fields_epoch.push_back(vector_fields[sample_num]);
+                    }
+
+                    //验证数据集
+
 
                     // 执行训练步骤
-                    auto loss = trainer.train_step(region_masks, vector_fields,
+                    auto loss = trainer.train_step(region_masks_epoch, vector_fields_epoch,
                         config.batch_size, 8, 8);
 
                     epoch_loss += loss.item<float>();
@@ -154,16 +168,17 @@ public:
 
                     // 每1个批次打印一次进度
                     if (batch_idx % 1 == 0) {
-                        std::cout << "Epoch " << epoch+1 << ", Batch " << batch_idx+1
+                        std::cout << "Epoch " << epoch + 1 << ", Batch " << batch_idx + 1
                             << "/" << total_batches << ", Loss: " << loss.item<float>() << std::endl;
                     }
 
                 }
                 catch (const std::exception& e) {
-                    std::cerr << "Error in batch " << batch_idx << ": " << e.what() << std::endl;
+                    std::cerr << "Error in batch " << batch_idx + 1 << ": " << e.what() << std::endl;
                     continue;
                 }
             }
+
 
             auto epoch_end = std::chrono::high_resolution_clock::now();
             auto epoch_duration = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -183,12 +198,16 @@ public:
             if (epoch % 10 == 0) {
                 save_checkpoint(epoch, avg_loss);
             }
-           
+            scheduler.step();
+            for (const auto& group : trainer.optimizer->param_groups()) {
+                std::cout << "当前学习率: " << group.options().get_lr() << std::endl;
+            }
+
         }
 
         std::cout << "=== Training Completed ===" << std::endl;
         //monitor.print_training_summary();//打印最终模型参数
-        
+
         std::cout << "Best loss achieved: " << best_loss << std::endl;
     }
     // 保存检查点（保持不变）
@@ -250,7 +269,7 @@ public:
         std::cout << "\n=== Testing Model ===" << std::endl;
 
         // 生成测试数据
-        auto [test_masks, test_fields] = get_training_batch(2);
+        auto [test_masks, test_fields] = get_training_batchs(2);
 
         try {
             // 运行一个训练步骤来测试
@@ -321,10 +340,10 @@ static void run_2() {
     std::cout << "3D Printing Path Planning Training Framework" << std::endl;
     std::cout << "============================================" << std::endl;
     TrainingConfig config;
-    config.num_epochs = 1;           // 减少epoch数量用于测试
+    config.num_epochs = 10;           // 减少epoch数量用于测试
     config.batch_size = 1;            // 小批量大小
-    config.num_samples = 1;         // 少量样本
-    config.learning_rate = 3e-3;
+    config.num_samples = 8;         // 少量样本
+    config.learning_rate = 1e-4;
     config.use_cuda = true;
 
     SimpleTrainer trainer(config);

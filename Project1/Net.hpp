@@ -79,7 +79,7 @@ public:
 
             coverage_map = initialize_coverage_from_mask(region_mask, batch_size);//从输入的区域掩码初始化掩码
 
-            last_point = torch::full({ batch_size, 2 },0.5f);  // 初始点设为(0.5,0.5)
+            last_point = torch::full({ batch_size, 2 },1.0f);  // 初始点设为(0.5,0.5)
             step_count = 0;
         }
     
@@ -132,6 +132,8 @@ public:
             state.last_point = state.last_point.to(device);
             state.hidden_state = state.hidden_state.to(device);
             state.cell_state = state.cell_state.to(device);
+            //std::cout<<state.last_point<<std::endl;
+
 
             states.push_back(state);
         }
@@ -204,7 +206,7 @@ public:
     int batch_size ;
 
 public:
-    PathPlanningTrainer(torch::Device device = torch::kCUDA);
+    PathPlanningTrainer(torch::Device device = torch::kCUDA, float learning_rate = 1e-4);
     torch::Tensor train_step(std::vector<torch::Tensor> region_masks, std::vector<torch::Tensor> vector_fields
         ,int samples_num = 4, int width=8, int height=8);
 
