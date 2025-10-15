@@ -140,8 +140,8 @@ CNNEncoder::CNNEncoder() {
     conv1 = register_module("conv1",
         torch::nn::Conv2d(torch::nn::Conv2dOptions(5, 64, 3).stride(1).padding(1)));  // 输入5通道, 输出64通道
     bn1 = register_module("bn1", torch::nn::BatchNorm2d(64));
-    torch::nn::init::normal_(bn1->weight, 1.0, 0.1);   // 均值1.0，标准差0.1
-    torch::nn::init::normal_(bn1->bias, 0.0, 0.1);     // 均值0.0，标准差0.1
+    torch::nn::init::normal_(bn1->weight, 1.0, 0.01);   // 均值1.0，标准差0.02
+    torch::nn::init::normal_(bn1->bias);     
     // 使用He初始化（适合ReLU家族）
     torch::nn::init::kaiming_normal_(conv1->weight, 0.01, torch::kFanOut, torch::kReLU);
     torch::nn::init::zeros_(conv1->bias);
@@ -150,19 +150,34 @@ CNNEncoder::CNNEncoder() {
     conv2 = register_module("conv2",
         torch::nn::Conv2d(torch::nn::Conv2dOptions(64, 128, 3).stride(1).padding(1)));
     bn2 = register_module("bn2", torch::nn::BatchNorm2d(128));
+    //残差
+    conv2_shortcut = register_module("conv2_shortcut",
+        torch::nn::Conv2d(torch::nn::Conv2dOptions(64, 128, 1).stride(1).padding(0)));
+    //bn2_shortcut = register_module("bn2_shortcut", torch::nn::BatchNorm2d(128));
+
     torch::nn::init::kaiming_normal_(conv2->weight, 0.01, torch::kFanOut, torch::kReLU);
     torch::nn::init::zeros_(conv2->bias);
-    torch::nn::init::normal_(bn2->weight, 1.0, 0.1);   // 均值1.0，标准差0.1
-    torch::nn::init::normal_(bn2->bias, 0.0, 0.1);     // 均值0.0，标准差0.1
+    torch::nn::init::normal_(bn2->weight, 1.0, 0.01);   // 均值1.0，标准差0.02
+    torch::nn::init::normal_(bn2->bias);   
+    //残差初始化
+    torch::nn::init::kaiming_normal_(conv2_shortcut->weight, 0.01, torch::kFanOut, torch::kReLU);
+    torch::nn::init::zeros_(conv2_shortcut->bias);
+    //torch::nn::init::normal_(bn2_shortcut->weight, 1.0, 0.02);
+    //torch::nn::init::zeros_(bn2_shortcut->bias);
 
     // 第三层: 全局特征
     conv3 = register_module("conv3",
         torch::nn::Conv2d(torch::nn::Conv2dOptions(128, 256, 3).stride(1).padding(1)));
     bn3 = register_module("bn3", torch::nn::BatchNorm2d(256));
+    conv3_shortcut = register_module("conv3_shortcut",
+        torch::nn::Conv2d(torch::nn::Conv2dOptions(128, 256, 1).stride(1).padding(0)));
     torch::nn::init::kaiming_normal_(conv3->weight, 0.01, torch::kFanOut, torch::kReLU);
     torch::nn::init::zeros_(conv3->bias);
-    torch::nn::init::normal_(bn3->weight, 1.0, 0.1);   // 均值1.0，标准差0.1
-    torch::nn::init::normal_(bn3->bias, 0.0, 0.1);     // 均值0.0，标准差0.1
+    torch::nn::init::normal_(bn3->weight, 1.0, 0.02);   // 均值1.0，标准差0.02
+    torch::nn::init::normal_(bn3->bias);   
+    //残差初始化
+    torch::nn::init::kaiming_normal_(conv3_shortcut->weight, 0.01, torch::kFanOut, torch::kReLU);
+    torch::nn::init::zeros_(conv3_shortcut->bias);
 
     pool = register_module("pool", torch::nn::MaxPool2d(2));
 }
@@ -186,10 +201,17 @@ torch::Tensor CNNEncoder::forward(const torch::Tensor& x) {
     auto h = torch::relu(bn1(conv1(x_permuted)));
 
     // 第一次池化: [batch, 64, 24, 24] → [batch, 128, 12, 12]
-    h = pool(torch::relu(bn2(conv2(h))));
+    auto h2 = torch::relu(bn2(conv2(h)));          // [batch, 128, 24, 24]
+    auto shortcut2 = torch::relu(conv2_shortcut(h));  // 残差路径
+    h = h2 + shortcut2;  // 残差相加
+    h = pool(h);  // 池化: [batch, 128, 12, 12]
 
     // 第二次池化: [batch, 128, 12, 12] → [batch, 256, 6, 6]
-    h = pool(torch::relu(bn3(conv3(h))));
+    //h = pool(torch::relu(bn3(conv3(h))));
+    auto h3 = torch::relu(bn3(conv3(h)));          // [batch, 128, 24, 24]
+    auto shortcut3 = torch::relu(conv3_shortcut(h));  // 残差路径
+    h = h3 + shortcut3;  // 残差相加
+    h = pool(h);  // 池化: [batch, 128, 12, 12]
 
     // 展平特征图: [batch, 256, 6, 6] → [batch, 36, 256]
     // 将空间维度展平为序列，保持通道维度作为特征
@@ -355,15 +377,15 @@ std::pair<torch::Tensor, LSTMPathDecoder::DecoderState> LSTMPathDecoder::forward
     auto coverage_mask = create_coverage_mask(state.coverage_map); 
     //auto coverage_mask = state.coverage_map.to(point_logits.device());
    
-    coverage_mask = 1.0 - coverage_mask;
+    //coverage_mask = 1.0 - coverage_mask;
    
 
     //point_logits = point_logits - 10* coverage_mask;// 已覆盖区域的点几乎不会被选中(惩罚可能有点多！！！！！)
     // 6.2限制到该点的7*7邻域区域概率大
     auto last_x = state.last_point.index({ torch::indexing::Slice(), 0 }).to(torch::kInt);  // [batch]，x坐标（列）
     auto last_y = state.last_point.index({ torch::indexing::Slice(), 1 }).to(torch::kInt);  // [batch]，y坐标（行）
-    std::cout<<"state.last_point:" << state.last_point << std::endl;
-    auto range_mask = torch::zeros({ batch_size, 576 }, point_logits.device());
+    //std::cout<<"state.last_point:" << state.last_point << std::endl;
+    auto range_mask = torch::ones({ batch_size, 576 }, point_logits.device());
     for (int b = 0; b < batch_size; ++b) {
         int x = last_x[b].item<int>();  // 当前样本上一点的x坐标
         int y = last_y[b].item<int>();  // 当前样本上一点的y坐标
@@ -374,22 +396,24 @@ std::pair<torch::Tensor, LSTMPathDecoder::DecoderState> LSTMPathDecoder::forward
         int y_min = std::max(0, y - 3);    // y方向上边界（最小0）
         int y_max = std::min(23, y + 3);   // y方向下边界（最大23）
 
-        // 标记7×7区域内的点：掩码设为1（不惩罚）
+        // 标记7×7区域内的点：掩码设为0（不惩罚）
         for (int yi = y_min; yi <= y_max; ++yi) {
             for (int xi = x_min; xi <= x_max; ++xi) {
                 int idx = yi * 24 + xi;  // 点的索引（0~575）
-                range_mask[b][idx] = 1.0f;  // 7×7区域内的点不惩罚
+                range_mask[b][idx] = 0.0f;  // 7×7区域内的点不惩罚
             }
         }
     }
     //std::cout<<range_mask << std::endl;
     //std::cout<<coverage_mask.sizes() << std::endl;
-    auto combined_mask = coverage_mask * range_mask;
+    coverage_mask = coverage_mask + range_mask;
+    //auto combined_mask = coverage_mask - 10*range_mask;
     // 确保没有完全为0的区域，避免梯度消失
-    combined_mask = torch::clamp_min(combined_mask, 1e-3f); 
+    //combined_mask = torch::clamp_min(combined_mask, 1e-3f); 
     //std::cout<< "point_logits_before_mask:" << point_logits << std::endl;
-   
-    point_logits = point_logits * combined_mask;
+   //std::cout<<coverage_mask << std::endl;
+   //std::cout<<point_logits << std::endl;
+    point_logits = point_logits -5*coverage_mask;
     //std::cout<<"mask:" << combined_mask << std::endl;
    // std::cout<<"point_logits_after_mask:" << point_logits << std::endl;
 
@@ -459,7 +483,7 @@ torch::Tensor LSTMPathDecoder::update_coverage(const torch::Tensor& coverage_map
             for (int dx = -1; dx <= 1; ++dx) {
                 int nx = x + dx, ny = y + dy;
                 if (nx >= 0 && nx < 24 && ny >= 0 && ny < 24) {
-                    new_coverage[b][ny][nx] = 1.0f;  // 标记为已覆盖
+                    new_coverage[b][ny][nx] = new_coverage[b][ny][nx]+1.0f;  // 累加覆盖次数
                 }
             }
         }
@@ -539,15 +563,18 @@ torch::Tensor PathPlanningTrainer::train_step(std::vector<torch::Tensor> region_
     auto cnn_features = encoder.forward(batch_features);  // [batch_size, 36, 256]
 
     // 3. 为批量中的每个样本初始化状态
+    std::vector<std::vector<torch::Tensor>> batch_paths(batch_size);
+    std::vector<std::vector<torch::Tensor>> batch_coverages(batch_size);
+
     auto states = LSTMPathDecoder::initialize_batch_states(region_masks, device, decoder.get_hidden_size(),decoder.get_m_layer_num());//每个样本初始化
     for (int i = 0; i < batch_size; i++) {
         states[i].coverage_map = LSTMPathDecoder::update_coverage(states[i].coverage_map, states[i].last_point);
+        batch_coverages[i].push_back(states[i].coverage_map);
+        torch::Tensor start = torch::ones({ 2 }, torch::device(device));//start point.last_point
+        batch_paths[i].push_back(start);
+
     }
     
-    std::vector<std::vector<torch::Tensor>> batch_paths(batch_size);
-    std::vector<std::vector<torch::Tensor>> batch_coverages(batch_size);
-    
-
     // 4. 批量序列生成
     auto vector_fields_tensor_for_loss = torch::stack(upsampled_vector_fields_V).to(device);
     auto vector_fields_tensor = torch::stack(vector_fields).to(device);
@@ -557,7 +584,7 @@ torch::Tensor PathPlanningTrainer::train_step(std::vector<torch::Tensor> region_
     for (int step = 0; step < max_path_length; ++step) {
         bool all_terminated = true;
         if (step % 50 == 0) {
-            std::cout << "step:" << step+1 << std::endl;
+            std::cout << "step:" << step + 1 << std::endl;
         }
         // 处理批量中每个样本的当前步骤
         for (int i = 0; i < batch_size; ++i) {
@@ -599,7 +626,7 @@ torch::Tensor PathPlanningTrainer::train_step(std::vector<torch::Tensor> region_
 
             auto continuous_coords = sampler.probability_to_continuous_coordinates(straight_through_samples, 24);
             auto continuous_point = continuous_coords.squeeze(0);  // [2]
-
+            //std::cout<< continuous_point.sizes() << std::endl;
 
             //auto straight_through_coords = LSTMPathDecoder::idx_to_coordinate(straight_through_samples);
             //auto straight_through_point = straight_through_coords.squeeze(0);
@@ -886,14 +913,7 @@ torch::Tensor MultiObjectiveLoss::compute_alignment_loss(const std::vector<torch
     if (path_points.size() <= 2) {
         return torch::zeros({ 1 }, device);
     }
-    //std::cout << vector_field.sizes() << std::endl;
-   /* auto soft_min = [](const torch::Tensor& a, const torch::Tensor& b, float beta = 10.0f) {
-        auto exp_neg_a = torch::exp(-beta * a);
-        auto exp_neg_b = torch::exp(-beta * b);
-        return (-torch::log(exp_neg_a + exp_neg_b) / beta);
-        };*/
-
-
+   
     torch::Tensor total_alignment_loss = torch::zeros({ 1 }, device);
     int segment_count = 0;
     //std::cout << path_points.size() << std::endl;
@@ -934,25 +954,23 @@ torch::Tensor MultiObjectiveLoss::compute_alignment_loss(const std::vector<torch
         auto segment_dir = segment_vector / norm_segment;
         auto field_dir = field_at_point / norm_field;
 
-        //// 计算顺/逆场差异的L2范数
-        //auto diff_forward_norm = torch::norm(segment_dir - field_dir);  // 顺场差异
-        //auto diff_backward_norm = torch::norm(segment_dir + field_dir); // 逆场差异
-
-        //// 使用soft-min替代硬min，避免梯度截断
-        //auto min_diff = soft_min(diff_forward_norm, diff_backward_norm, 2.0f);
-
-        //
-        //auto alignment_loss = min_diff ;
+        
         auto dot_product = torch::dot(segment_dir, field_dir);
         //限制点积的范围
         dot_product = torch::clamp(dot_product, -1.0f + 1e-6f, 1.0f - 1e-6f);
 
-
-        // 目标：abs_cos越接近1越好（顺/逆场方向），接近0则损失大
-        // 转换为损失：1 - abs_cos（范围[0,1]，数值更稳定）
         auto alignment_loss = 1.0f - torch::abs(dot_product);//点积的绝对值
         
+
         total_alignment_loss += alignment_loss;
+
+        // 在对齐损失函数中添加调试
+        /*std::cout << "Alignment loss computation:" << std::endl;
+        std::cout << "  Path points: " << path_points.size() << std::endl;
+        std::cout << "  Segment vector norm: " << norm_segment.item<float>() << std::endl;
+        std::cout << "  Field norm: " << norm_field.item<float>() << std::endl;
+        std::cout << "  Dot product: " << dot_product.item<float>() << std::endl;
+        std::cout << "  Alignment loss: " << alignment_loss.item<float>() << std::endl;*/
         segment_count++;
     }
 
@@ -1049,38 +1067,29 @@ torch::Tensor MultiObjectiveLoss::bilinear_sample_vector_field(const torch::Tens
 std::pair<torch::Tensor, torch::Tensor> ImprovedSampler::sample_with_temperature_st(const torch::Tensor& point_logits) {
     float current_temp = get_current_temperature();
     //std::cout<<point_logits << std::endl;
-    auto point_logitss = point_logits * 10000;
-    //std::cout<<"point_logitss:" << point_logitss << std::endl;
-
+    //auto point_logitss = point_logits * 1.0f;
+    //std::cout<<"point_logits:" << point_logits.sizes()<< std::endl;
     //std::cout << torch::max(point_logitss) << std::endl;
     // 确保logits不会太大导致softmax饱和
-    auto stabilized_logits = point_logitss - torch::max(point_logitss);
+    auto max_point_logits=torch::max(point_logits.flatten()).item<float>();
+    //torch::Tensor stabilized_logits = torch::zeros_like(point_logits);
+    //std::cout<<"point_logits:" << point_logits.sizes()<< std::endl;
+    auto stabilized_logits = point_logits - max_point_logits;
     //std::cout<<"stabilized_logits:" << stabilized_logits << std::endl;
     // 应用温度缩放
     auto tempered_logits = stabilized_logits / current_temp;
-   // std::cout<<"tempered_logits:" << tempered_logits << std::endl;
+    //std::cout<<"tempered_logits:" << tempered_logits << std::endl;
     // 添加适度的Gumbel噪声
     auto gumbel_noise = -torch::log(-torch::log(torch::rand_like(tempered_logits) + 1e-8) + 1e-8);
-    auto noisy_logits = tempered_logits + gumbel_noise;
-   // std::cout<<"noisy_logits:" << noisy_logits << std::endl;
+    auto noisy_logits = tempered_logits + 0.001f*gumbel_noise;
+    //std::cout<<"noisy_logits:" << noisy_logits << std::endl;
     auto soft_samples = torch::softmax(noisy_logits, -1);
     auto hard_samples = torch::argmax(soft_samples, -1);
     //std::cout<<"soft_samples:" << soft_samples << std::endl;
-    
+    //std::cout<<"torch::max(point_logitss)"<< torch::max(point_logitss) << std::endl;
     auto hard_samples_one_hot = torch::nn::functional::one_hot(hard_samples, point_logits.size(-1))
         .to(point_logits.dtype());
-    // 添加Gumbel噪声
-   
-    //auto gumbel_noise = -torch::log(-torch::log(torch::rand_like(point_logits)));
-
-    // 应用温度缩放
-    //auto tempered_logits = (point_logits + gumbel_noise) / current_temp;
-    //auto soft_samples = torch::softmax(tempered_logits, -1);
-
-    // 硬采样：在前向传播中使用argmax
-    //auto hard_samples = torch::argmax(soft_samples, -1);
-
-    // Straight-Through技巧：在前向传播中使用硬采样，在反向传播中使用软采样
+    
     auto straight_through_samples = hard_samples_one_hot + soft_samples - soft_samples.detach();
     //straight_through_samples = straight_through_samples.squeeze(0);
     //std::cout<<"straight_through_samples:" << straight_through_samples << std::endl;

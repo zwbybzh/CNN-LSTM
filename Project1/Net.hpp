@@ -20,6 +20,9 @@ private:
     // 多尺度特征提取
     torch::nn::Conv2d conv1{ nullptr }, conv2{ nullptr }, conv3{ nullptr };
     torch::nn::BatchNorm2d bn1{ nullptr }, bn2{ nullptr }, bn3{ nullptr };
+    // 残差连接所需的卷积和BN（用于维度匹配）
+    torch::nn::Conv2d conv2_shortcut{ nullptr }, conv3_shortcut{ nullptr };
+    //torch::nn::BatchNorm2d bn2_shortcut{ nullptr }/*, bn3_shortcut{ nullptr }*/;
     torch::nn::MaxPool2d pool{ nullptr };
 public:
     CNNEncoder();

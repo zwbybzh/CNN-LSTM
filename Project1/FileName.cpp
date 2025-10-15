@@ -340,9 +340,9 @@ static void run_2() {
     std::cout << "3D Printing Path Planning Training Framework" << std::endl;
     std::cout << "============================================" << std::endl;
     TrainingConfig config;
-    config.num_epochs = 10;           // 减少epoch数量用于测试
-    config.batch_size = 1;            // 小批量大小
-    config.num_samples = 8;         // 少量样本
+    config.num_epochs = 50;           // 减少epoch数量用于测试
+    config.batch_size = 64;            // 小批量大小
+    config.num_samples = 64;         // 少量样本
     config.learning_rate = 1e-4;
     config.use_cuda = true;
 
@@ -422,6 +422,9 @@ public:
             // 3. 初始化解码器状态
             std::vector<torch::Tensor> masks = { region_mask_device };
             auto states = LSTMPathDecoder::initialize_batch_states(masks, device, decoder.get_hidden_size(),decoder.get_m_layer_num());
+            states[0].coverage_map = LSTMPathDecoder::update_coverage(states[0].coverage_map, states[0].last_point);
+            torch::Tensor start = torch::ones({ 2 }, torch::device(device));//start point.last_point
+            path_points.push_back(start);
             auto state = states[0];  // 取第一个状态
             //std::cout << "state[0]" << states[0].hidden_state.sizes() << std::endl;
             // 4. 生成路径序列
@@ -861,7 +864,9 @@ private:
         const torch::Tensor& region_mask) {
         auto highres_mask = input_processor.upsample_3x3(region_mask).squeeze(-1);
         auto target_area = torch::sum(highres_mask);
-        auto covered_area = torch::sum(coverage_map * highres_mask);
+        //创建浮点数布尔掩码
+        auto binary_coverage = (coverage_map > 0).to(torch::kFloat);
+        auto covered_area = torch::sum(binary_coverage * highres_mask);
         float coverage_ratio = covered_area.item<float>() / target_area.item<float>();
         return coverage_ratio >= 0.95f;
     }
@@ -964,7 +969,7 @@ void run_inference_example() {
 
 int main() {
     run_2();
-    //run_inference_example();
+   // run_inference_example();
     return 0;
 }
 
